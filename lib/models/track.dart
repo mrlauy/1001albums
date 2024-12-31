@@ -1,4 +1,3 @@
-import 'package:albums/models/fields.dart';
 
 class Track {
   final int rank;

@@ -15,9 +15,9 @@ class StorageService {
   final writeConvertor =
       const ListToCsvConverter(fieldDelimiter: ',', eol: '\n');
 
-  Future<String> get _localPath async {
+  Future<String?> get _localPath async {
     final directory = await getExternalStorageDirectory();
-    return directory.path;
+    return directory?.path;
   }
 
   Future<File> get _localFile async {
@@ -26,21 +26,26 @@ class StorageService {
   }
 
   Future<List<Album>> loadAlbums(bool forceReload) async {
-    developer.log("load albums");
     List<List<dynamic>> storedAlbums = await _loadAlbums(forceReload);
-    List<Album> albums = List<Album>(storedAlbums.length - 1);
-    for (int i = 0; i < albums.length; i++) {
-      albums[i] = Album.fromRow(storedAlbums[i + 1], i);
-    }
+    List<Album> albums = storedAlbums
+        .asMap()
+        .map((index, albumList) =>
+            MapEntry(index, Album.fromRow(albumList, index)))
+        .values
+        .toList(growable: false);
+
     return albums;
   }
 
   Future<List<List<dynamic>>> _loadAlbums(bool forceReload) async {
     try {
       final file = await _localFile;
+      developer.log('local albums from: $file');
       if (forceReload || !await file.exists()) {
         developer.log("read albums from assets");
         final data = await rootBundle.loadString('assets/albums.csv');
+
+        developer.log("load albums from assets : $data");
         return readConvertor.convert(data);
       }
       developer.log("read albums from file");

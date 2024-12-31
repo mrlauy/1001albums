@@ -1,20 +1,25 @@
 import 'package:albums/models/album.dart';
 import 'package:albums/models/sort.dart';
-import 'package:albums/screens/album.dart';
 import "package:draggable_scrollbar/draggable_scrollbar.dart";
 import 'package:flutter/material.dart';
 
+import 'album.dart';
+
 class AlbumsView extends StatelessWidget {
   final Iterable<Album> albums;
-  final Function(Album) updateAlbum;
+  final Function(Album, bool) updateListened;
+  final Function(Album, double) updateRating;
   final Sort sorting;
+  final ScrollController _controller = ScrollController();
 
-  const AlbumsView({Key key, this.albums, this.updateAlbum, this.sorting})
-      : super(key: key);
+  AlbumsView(
+      {required this.albums,
+      required this.updateListened,
+      required this.updateRating,
+      required this.sorting});
 
   @override
   Widget build(BuildContext context) {
-    ScrollController _controller = ScrollController();
     return DraggableScrollbar.semicircle(
       labelTextBuilder: (offset) {
         if (!_controller.hasClients) {
@@ -39,24 +44,28 @@ class AlbumsView extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               value: albums.elementAt(index).listened,
               onChanged: (checked) {
-                albums.elementAt(index).listened = checked;
-                updateAlbum(albums.elementAt(index));
+                updateListened(albums.elementAt(index), checked ?? false);
               },
             ),
             visualDensity: VisualDensity.compact,
             contentPadding:
                 EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (builder) => AlbumPage(
-                      album: albums.elementAt(index), updateAlbum: updateAlbum),
-                ),
-              );
-            },
+            onTap: () => _navigateAlbum(context, albums.elementAt(index)),
           );
         },
+      ),
+    );
+  }
+
+  void _navigateAlbum(BuildContext context, Album album) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AlbumPage(
+          album: album,
+          updateListened: updateListened,
+          updateRating: updateRating,
+        ),
       ),
     );
   }
@@ -69,7 +78,7 @@ class AlbumsView extends StatelessWidget {
         final year = albums.elementAt(currentIndex).releaseDate;
         return year.isNotEmpty ? year : "--";
       case Sort.Rating:
-        return "${albums.elementAt(currentIndex).rating??"--"}";
+        return "${albums.elementAt(currentIndex).rating}";
       case Sort.Ranking:
         final stoneRank = albums.elementAt(currentIndex).rollingStoneRank;
         return stoneRank.isNotEmpty ? stoneRank : "--";

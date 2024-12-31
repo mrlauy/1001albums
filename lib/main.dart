@@ -13,6 +13,10 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: '1001 Albums',
       theme: ThemeData(
+        appBarTheme: AppBarTheme(
+            backgroundColor: Colors.deepPurple,
+            foregroundColor: Colors.white //here you can give the text color
+            ),
         primarySwatch: Colors.deepPurple,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),

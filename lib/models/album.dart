@@ -16,7 +16,7 @@ class Album {
 
   // changeable state
   bool listened;
-  double rating;
+  double? rating;
 
   // loadable state
   bool details = false;
@@ -25,19 +25,23 @@ class Album {
   List<String> tags;
 
   Album(
-      this.index,
-      this.category,
-      this.artist,
-      this.albumTitle,
-      this.releaseDate,
-      this.rollingStoneRank,
-      this.runningTime,
-      this.label,
-      this.producer,
-      this.artDirection,
-      this.nationality,
-      this.listened,
-      this.rating);
+    this.index,
+    this.category,
+    this.artist,
+    this.albumTitle,
+    this.releaseDate,
+    this.rollingStoneRank,
+    this.runningTime,
+    this.label,
+    this.producer,
+    this.artDirection,
+    this.nationality,
+    this.listened,
+    this.rating,
+  )   : cover = "",
+        tracks = List.empty(),
+        tags = List.empty(),
+        details = false;
 
   factory Album.fromRow(List<dynamic> a, int index) {
     return Album(
@@ -53,25 +57,26 @@ class Album {
         a[Field.ArtDirection.index].toString(),
         a[Field.Nationality.index].toString(),
         a[Field.Listened.index] != "",
-        a[Field.Rating.index] is double ? a[Field.Rating.index] : double.tryParse(a[Field.Rating.index]) ?? null
-    );
+        a[Field.Rating.index] is double
+            ? a[Field.Rating.index]
+            : double.tryParse(a[Field.Rating.index]) ?? null);
   }
 
   List<String> toRow() {
-    List<String> row = List<String>(Field.values.length);
-    row[Field.Category.index] = category;
-    row[Field.Artist.index] = artist;
-    row[Field.AlbumTitle.index] = albumTitle;
-    row[Field.ReleaseDate.index] = releaseDate;
-    row[Field.RollingStoneRank.index] = rollingStoneRank;
-    row[Field.RunningTime.index] = runningTime;
-    row[Field.Label.index] = label;
-    row[Field.Producer.index] = producer;
-    row[Field.ArtDirection.index] = artDirection;
-    row[Field.Nationality.index] = nationality;
-    row[Field.Listened.index] = listened ? "x" : "";
-    row[Field.Rating.index] = rating?.toString();
-    return row;
+    return [
+      category, // Field.Category.index
+      artist, // Field.Artist.index
+      albumTitle, // Field.AlbumTitle.index
+      releaseDate, // Field.ReleaseDate.index
+      rollingStoneRank, // Field.RollingStoneRank.index
+      runningTime, // Field.RunningTime.index
+      label, // Field.Label.index
+      producer, // Field.Producer.index
+      artDirection, // Field.ArtDirection.index
+      nationality, // Field.Nationality.index
+      listened ? "x" : "", // Field.Listened.index
+      rating.toString(), // Field.Rating.index
+    ];
   }
 
   @override

@@ -27,54 +27,60 @@ const PREFERENCE_ROLLING_STONES = "show_rolling_stones";
 class _HomePageState extends State<HomePage> {
   final StorageService albumStorage = StorageService();
 
-  List<Album> _albums;
-  Iterable<Album> _displayedAlbums;
-  Settings _settings;
+  bool isLoading = true;
+  late List<Album> _albums;
+  late Iterable<Album>? _displayedAlbums;
+  late Settings _settings;
 
   @override
   void initState() {
     super.initState();
     developer.log('init 1001Albums');
 
-
     SharedPreferences.getInstance().then((prefs) {
-      setState(() =>
-      _settings = Settings(
-        prefs.getInt(CONTENT_VERSION_SETTING) ?? 0,
-        sortFromString(prefs.getString(PREFERENCE_SORT), Sort.Album),
-        prefs.getBool(PREFERENCE_DIRECTION) ?? true,
-        prefs.getBool(PREFERENCE_LISTENED) ?? true,
-        prefs.getBool(PREFERENCE_1001ALBUMS) ?? true,
-        prefs.getBool(PREFERENCE_ROLLING_STONES) ?? true,
-      ));
+      setState(() => _settings = Settings(
+            prefs.getInt(CONTENT_VERSION_SETTING) ?? 0,
+            sortFromString(prefs.getString(PREFERENCE_SORT) ?? "", Sort.Album),
+            prefs.getBool(PREFERENCE_DIRECTION) ?? true,
+            prefs.getBool(PREFERENCE_LISTENED) ?? true,
+            prefs.getBool(PREFERENCE_1001ALBUMS) ?? true,
+            prefs.getBool(PREFERENCE_ROLLING_STONES) ?? true,
+          ));
 
       developer.log("init state: $_settings");
 
       albumStorage
           .loadAlbums(_settings.contentVersion < CONTENT_VERSION)
           .then((value) {
-            prefs.setInt(CONTENT_VERSION_SETTING, CONTENT_VERSION);
-            setState(() => _albums = value);
-          })
-          .catchError((err) => print("TODO show error: $err"));
+        prefs.setInt(CONTENT_VERSION_SETTING, CONTENT_VERSION);
+        setState(() {
+          _albums = value;
+          isLoading = false;
+          print('init albums: $_albums');
+        });
+      }).catchError((err) {
+        developer.log('failed to load albums: $err', error: err);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('failed to load albums'),
+        ));
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    developer.log("build albums list");
-
     return Scaffold(
       appBar: AppBar(
         title: Text('1001 Albums'),
       ),
-      body: _displayedAlbums == null
+      body: isLoading || _displayedAlbums == null
           ? LoadingView()
           : AlbumsView(
-        albums: _displayedAlbums,
-        updateAlbum: setAlbum,
-        sorting: _settings.sort,
-      ),
+              albums: _displayedAlbums!,
+              updateListened: updateListened,
+              updateRating: updateRating,
+              sorting: _settings.sort,
+            ),
       drawer: _menuDrawer(context),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.filter_list),
@@ -84,84 +90,83 @@ class _HomePageState extends State<HomePage> {
   }
 
   void filterMenu() {
-    if (_settings != null) {
-      showModalBottomSheet(
-        context: context,
-        builder: (BuildContext bc) {
-          return Column(
-            children: <Widget>[
-              ListTile(
-                title: const Text('Sort albums by'),
-                trailing: DropdownButton<Sort>(
-                  value: _settings.sort,
-                  onChanged: (Sort value) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return Column(
+          children: <Widget>[
+            ListTile(
+              title: const Text('Sort albums by'),
+              trailing: DropdownButton<Sort>(
+                value: _settings.sort,
+                onChanged: (Sort? value) {
+                  if (value != null) {
                     setState(() => _settings.sort = value);
                     saveSetting((prefs) =>
                         prefs.setString(PREFERENCE_SORT, value.toString()));
                     Navigator.pop(context);
-                  },
-                  items: Sort.values.map<DropdownMenuItem<Sort>>((Sort value) {
-                    return DropdownMenuItem<Sort>(
-                      value: value,
-                      child: Text(value.text),
-                    );
-                  }).toList(),
-                ),
+                  }
+                },
+                items: Sort.values.map<DropdownMenuItem<Sort>>((Sort value) {
+                  return DropdownMenuItem<Sort>(
+                    value: value,
+                    child: Text(value.text),
+                  );
+                }).toList(),
               ),
-              ListTile(
-                title: Text('Sort albums ascending'),
-                trailing: Switch(
-                  value: _settings.sortAscending,
-                  onChanged: (checked) {
-                    setState(() => _settings.sortAscending = checked);
-                    saveSetting((prefs) =>
-                        prefs.setBool(PREFERENCE_DIRECTION, checked));
-                    Navigator.pop(context);
-                  },
-                ),
+            ),
+            ListTile(
+              title: Text('Sort albums ascending'),
+              trailing: Switch(
+                value: _settings.sortAscending,
+                onChanged: (checked) {
+                  setState(() => _settings.sortAscending = checked);
+                  saveSetting(
+                      (prefs) => prefs.setBool(PREFERENCE_DIRECTION, checked));
+                  Navigator.pop(context);
+                },
               ),
-              ListTile(
-                title: Text('Show listened'),
-                trailing: Switch(
-                  value: _settings.showListened,
-                  onChanged: (checked) {
-                    setState(() => _settings.showListened = checked);
-                    saveSetting(
-                            (prefs) =>
-                            prefs.setBool(PREFERENCE_LISTENED, checked));
-                    Navigator.pop(context);
-                  },
-                ),
+            ),
+            ListTile(
+              title: Text('Show listened'),
+              trailing: Switch(
+                value: _settings.showListened,
+                onChanged: (checked) {
+                  setState(() => _settings.showListened = checked);
+                  saveSetting(
+                      (prefs) => prefs.setBool(PREFERENCE_LISTENED, checked));
+                  Navigator.pop(context);
+                },
               ),
-              ListTile(
-                title: Text('Show only in 1001 Albums'),
-                trailing: Switch(
-                  value: _settings.show1001Albums,
-                  onChanged: (checked) {
-                    setState(() => _settings.show1001Albums = checked);
-                    saveSetting((prefs) =>
-                        prefs.setBool(PREFERENCE_1001ALBUMS, checked));
-                    Navigator.pop(context);
-                  },
-                ),
+            ),
+            ListTile(
+              title: Text('Show only in 1001 Albums'),
+              trailing: Switch(
+                value: _settings.show1001Albums,
+                onChanged: (checked) {
+                  setState(() => _settings.show1001Albums = checked);
+                  saveSetting(
+                      (prefs) => prefs.setBool(PREFERENCE_1001ALBUMS, checked));
+                  Navigator.pop(context);
+                },
               ),
-              ListTile(
-                title: Text('Show only in Rolling Stone 500'),
-                trailing: Switch(
-                  value: _settings.showRollingStones,
-                  onChanged: (checked) {
-                    setState(() => _settings.showRollingStones = checked);
-                    saveSetting((prefs) =>
-                        prefs.setBool(PREFERENCE_ROLLING_STONES, checked));
-                    Navigator.pop(context);
-                  },
-                ),
+            ),
+            ListTile(
+              title: Text('Show only in Rolling Stone 500'),
+              trailing: Switch(
+                value: _settings.showRollingStones,
+                onChanged: (checked) {
+                  setState(() => _settings.showRollingStones = checked);
+                  saveSetting((prefs) =>
+                      prefs.setBool(PREFERENCE_ROLLING_STONES, checked));
+                  Navigator.pop(context);
+                },
               ),
-            ],
-          );
-        },
-      );
-    }
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void saveSetting(Function(SharedPreferences) save) async {
@@ -172,9 +177,20 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void setState(VoidCallback fn) {
-    developer.log("update state");
     super.setState(fn);
-    _displayedAlbums = listAlbums();
+    if (!isLoading) {
+      _displayedAlbums = listAlbums();
+    }
+  }
+
+  void updateListened(Album album, bool listened) {
+    album.listened = listened;
+    setAlbum(album);
+  }
+
+  void updateRating(Album album, double? rating) {
+    album.rating = rating;
+    setAlbum(album);
   }
 
   void setAlbum(Album album) {
@@ -184,17 +200,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Iterable<Album> listAlbums() {
-    if (_albums == null || _settings == null) {
-      return null;
-    }
-
     developer.log("list albums: $_settings");
     List<Album> albums = _albums
         .where((album) =>
-    (_settings.showListened || !album.listened) &&
-        (_settings.show1001Albums || album.category != "1001... Only") &&
-        (_settings.showRollingStones ||
-            !album.category.startsWith("RS 500")))
+            (_settings.showListened || !album.listened) &&
+            (_settings.show1001Albums || album.category != "1001... Only") &&
+            (_settings.showRollingStones ||
+                !album.category.startsWith("RS 500")))
         .toList();
 
     // sort the albums
@@ -221,16 +233,12 @@ class _HomePageState extends State<HomePage> {
 
   Drawer _menuDrawer(BuildContext context) {
     final headerChild = DrawerHeader(
-      decoration: BoxDecoration(color: Theme
-          .of(context)
-          .primaryColor),
+      decoration: BoxDecoration(color: Theme.of(context).primaryColor),
       child: Text(
         '',
-        style:
-        Theme
-            .of(context)
+        style: Theme.of(context)
             .textTheme
-            .headline5
+            .headlineSmall!
             .copyWith(color: Colors.white),
       ),
     );
@@ -260,14 +268,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   int _stringComparator(String a, String b) {
-    var aRank = a.isNotEmpty && a != "--" ? a : (_settings.sortAscending ? "9999" : "-1");
-    var bRank = b.isNotEmpty && b != "--" ? b : (_settings.sortAscending ? "9999" : "-1");
+    var aRank = a.isNotEmpty && a != "--"
+        ? a
+        : (_settings.sortAscending ? "9999" : "-1");
+    var bRank = b.isNotEmpty && b != "--"
+        ? b
+        : (_settings.sortAscending ? "9999" : "-1");
     return AlphanumComparator.compare(aRank, bRank);
   }
 
-  int _doubleComparator(double a, double b) {
-    var aRank = a?? (_settings.sortAscending ? 9999 : -1);
-    var bRank = b?? (_settings.sortAscending ? 9999 : -1);
+  int _doubleComparator(double? a, double? b) {
+    var aRank = a ?? (_settings.sortAscending ? 9999 : -1);
+    var bRank = b ?? (_settings.sortAscending ? 9999 : -1);
     return aRank.compareTo(bRank);
   }
 }
