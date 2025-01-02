@@ -1,14 +1,14 @@
 enum Field {
-  Category,
-  Artist,
-  AlbumTitle,
-  ReleaseDate,
-  RollingStoneRank,
-  RunningTime,
-  Label,
-  Producer,
-  ArtDirection,
-  Nationality,
-  Listened,
-  Rating
+  category,
+  artist,
+  albumTitle,
+  releaseDate,
+  rollingStoneRank,
+  runningTime,
+  label,
+  producer,
+  artDirection,
+  nationality,
+  listened,
+  rating
 }

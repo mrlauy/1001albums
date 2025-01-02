@@ -1,0 +1,11 @@
+
+### GET token
+GET https://ws.audioscrobbler.com/2.0/?method=auth.gettoken&api_key={{api-key}}&format=json
+
+### GET artist
+
+GET http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=Cher&api_key={{api-key}}&format=json
+
+### GET album
+
+GET http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key={{api-key}}&artist=Cher&album=Believe&format=json

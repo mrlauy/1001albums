@@ -1,5 +1,4 @@
 import 'package:albums/models/fields.dart';
-import 'package:albums/models/track.dart';
 
 class Album {
   final int index;
@@ -18,12 +17,6 @@ class Album {
   bool listened;
   double? rating;
 
-  // loadable state
-  bool details = false;
-  String cover;
-  List<Track> tracks;
-  List<String> tags;
-
   Album(
     this.index,
     this.category,
@@ -38,28 +31,25 @@ class Album {
     this.nationality,
     this.listened,
     this.rating,
-  )   : cover = "",
-        tracks = List.empty(),
-        tags = List.empty(),
-        details = false;
+  );
 
   factory Album.fromRow(List<dynamic> a, int index) {
     return Album(
         index,
-        a[Field.Category.index].toString(),
-        a[Field.Artist.index].toString(),
-        a[Field.AlbumTitle.index].toString(),
-        a[Field.ReleaseDate.index].toString(),
-        a[Field.RollingStoneRank.index].toString(),
-        a[Field.RunningTime.index].toString(),
-        a[Field.Label.index].toString(),
-        a[Field.Producer.index].toString(),
-        a[Field.ArtDirection.index].toString(),
-        a[Field.Nationality.index].toString(),
-        a[Field.Listened.index] != "",
-        a[Field.Rating.index] is double
-            ? a[Field.Rating.index]
-            : double.tryParse(a[Field.Rating.index]) ?? null);
+        a[Field.category.index].toString(),
+        a[Field.artist.index].toString(),
+        a[Field.albumTitle.index].toString(),
+        a[Field.releaseDate.index].toString(),
+        a[Field.rollingStoneRank.index].toString(),
+        a[Field.runningTime.index].toString(),
+        a[Field.label.index].toString(),
+        a[Field.producer.index].toString(),
+        a[Field.artDirection.index].toString(),
+        a[Field.nationality.index].toString(),
+        a[Field.listened.index] != '',
+        a[Field.rating.index] is double
+            ? a[Field.rating.index]
+            : double.tryParse(a[Field.rating.index]));
   }
 
   List<String> toRow() {
@@ -74,17 +64,13 @@ class Album {
       producer, // Field.Producer.index
       artDirection, // Field.ArtDirection.index
       nationality, // Field.Nationality.index
-      listened ? "x" : "", // Field.Listened.index
+      listened ? 'x' : '', // Field.Listened.index
       rating.toString(), // Field.Rating.index
     ];
   }
 
   @override
   String toString() {
-    return "album $index: [title=$albumTitle, artist=$artist, listened=$listened, rating=$rating]";
-  }
-
-  String fullString() {
-    return "album $index: [title=$albumTitle, artist=$artist, listened=$listened, rating=$rating, details=$details, tracks=$tracks, tags=$tags, cover=$cover]";
+    return 'album $index: [title=$albumTitle, artist=$artist, listened=$listened, rating=$rating]';
   }
 }

@@ -1,39 +1,61 @@
+import 'dart:developer' as developer;
+
+import 'package:albums/locator.dart';
 import 'package:albums/models/album.dart';
+import 'package:albums/models/album_details.dart';
 import 'package:albums/models/track.dart';
+import 'package:albums/service/details.dart';
 import 'package:albums/widgets/star_rating.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class AlbumPage extends StatefulWidget {
   final Album album;
   final Function(Album, bool) updateListened;
   final Function(Album, double) updateRating;
 
-  AlbumPage({
+  const AlbumPage({
+    super.key,
     required this.album,
     required this.updateListened,
     required this.updateRating,
   });
 
   @override
-  _AlbumPageState createState() => _AlbumPageState();
+  State<AlbumPage> createState() => _AlbumPageState();
 }
 
 class _AlbumPageState extends State<AlbumPage> {
+  final DetailService detailService = locator<DetailService>();
   late bool _listened;
   late double _rating;
+  AlbumDetails? details;
 
   @override
   void initState() {
     super.initState();
     _listened = widget.album.listened;
     _rating = widget.album.rating ?? -1;
+
+    detailService.getDetails(widget.album).then((result) {
+      setState(() {
+        details = result;
+      });
+    }).catchError((err) {
+      developer.log('failed to load album details: $err', error: err);
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('failed to load albums'),
+        ));
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Details'),
+        title: const Text('Details'),
       ),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
@@ -42,13 +64,12 @@ class _AlbumPageState extends State<AlbumPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: !widget.album.cover.startsWith("http")
-                  ? Image.asset('images/ic_album.png', height: 12)
-                  : FadeInImage.assetNetwork(
-                      placeholder: 'images/ic_album.png',
-                      image: widget.album.cover,
-                    ),
-            ),
+                child: (details?.cover != null
+                    ? FadeInImage.assetNetwork(
+                        placeholder: 'images/ic_album.png',
+                        image: details!.cover!,
+                      )
+                    : Image.asset('images/ic_album.png', height: 64))),
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
@@ -64,7 +85,7 @@ class _AlbumPageState extends State<AlbumPage> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-            Divider(),
+            const Divider(),
             CheckboxListTile(
               title: Text('Listened to album',
                   style: Theme.of(context).textTheme.bodyMedium),
@@ -89,7 +110,7 @@ class _AlbumPageState extends State<AlbumPage> {
               infoRow('Label', widget.album.label),
             if (widget.album.artDirection.isNotEmpty)
               infoRow('Art direction', widget.album.artDirection),
-            Divider(),
+            const Divider(),
             Center(
               child: StarRating(
                 rating: _rating,
@@ -107,7 +128,7 @@ class _AlbumPageState extends State<AlbumPage> {
                 },
               ),
             ),
-            Divider(),
+            const Divider(),
             detailsView(),
           ],
         ),
@@ -133,17 +154,22 @@ class _AlbumPageState extends State<AlbumPage> {
   }
 
   Widget detailsView() {
-    return !widget.album.details
-        ? SizedBox()
+    return details == null
+        ? const SizedBox()
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text('tags: ${widget.album.tags.join(", ")}'),
+                child: Text('tags: ${details!.tags.join(", ")}'),
               ),
-              Divider(),
-              for (var track in widget.album.tracks) trackRow(track),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(details!.info ?? 'no wiki information'),
+              ),
+              const Divider(),
+              for (var track in details!.tracks) trackRow(track),
             ],
           );
   }
@@ -155,7 +181,7 @@ class _AlbumPageState extends State<AlbumPage> {
         children: [
           Expanded(flex: 1, child: Text('${track.rank}')),
           Expanded(flex: 6, child: Text(track.name)),
-          Expanded(flex: 1, child: Text(track.duration)),
+          Expanded(flex: 1, child: Text('${track.duration}')),
         ],
       ),
     );

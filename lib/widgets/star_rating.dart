@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-typedef void RatingChangeCallback(double rating);
+typedef RatingChangeCallback = void Function(double rating);
 
 class StarRating extends StatelessWidget {
   final int starCount;
@@ -10,7 +10,8 @@ class StarRating extends StatelessWidget {
   final Color? color;
   final double size;
 
-  StarRating({
+  const StarRating({
+    super.key,
     this.starCount = 5,
     this.rating = .0,
     this.onRatingChange,
@@ -24,52 +25,52 @@ class StarRating extends StatelessWidget {
     return Row(
         mainAxisSize: MainAxisSize.min,
         children:
-            new List.generate(starCount, (index) => buildStar(context, index)));
+            List.generate(starCount, (index) => buildStar(context, index)));
   }
 
   Widget buildStar(BuildContext context, int index) {
     Icon icon;
     if (index >= rating) {
-      icon = new Icon(
+      icon = Icon(
         Icons.star_border,
         color: color ?? Theme.of(context).primaryColor,
         size: size,
       );
     } else if (index > rating - 0.5 && index < rating) {
-      icon = new Icon(
+      icon = Icon(
         Icons.star_half,
         color: color ?? Theme.of(context).primaryColor,
         size: size,
       );
     } else {
-      icon = new Icon(
+      icon = Icon(
         Icons.star,
         color: color ?? Theme.of(context).primaryColor,
         size: size,
       );
     }
 
-    return new GestureDetector(
+    return GestureDetector(
       onTap: () {
-        if (this.onRatingChanged != null) onRatingChanged!(index + 1.0);
+        if (onRatingChanged != null) onRatingChanged!(index + 1.0);
       },
       onHorizontalDragEnd: (dragDetails) {
         RenderBox box = context.findRenderObject() as RenderBox;
         var newRating = _calcRating(box, dragDetails.globalPosition);
-        if (this.onRatingChanged != null) onRatingChanged!(newRating);
+        if (onRatingChanged != null) onRatingChanged!(newRating);
       },
       onHorizontalDragUpdate: (dragDetails) {
         RenderBox box = context.findRenderObject() as RenderBox;
         var newRating = _calcRating(box, dragDetails.globalPosition);
-        if (this.onRatingChanged != null) onRatingChange!(newRating);
+        if (onRatingChanged != null) onRatingChange!(newRating);
       },
       child: icon,
     );
   }
 
   double _calcRating(RenderBox box, Offset offset) {
-    var _pos = box.globalToLocal(offset);
-    var i = _pos.dx / size;
+    var pos = box.globalToLocal(offset);
+    var i = pos.dx / size;
     var newRating = i;
     if (newRating > starCount) {
       newRating = starCount.toDouble();

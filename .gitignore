@@ -12,6 +12,8 @@
 .buildlog/
 .history
 .svn/
+.metadata
+http-client.private.env.json
 
 # IntelliJ related
 *.iml
@@ -63,6 +65,7 @@ flutter_*.png
 linked_*.ds
 unlinked.ds
 unlinked_spec.ds
+**/.cxx
 
 # Android related
 **/android/**/gradle-wrapper.jar

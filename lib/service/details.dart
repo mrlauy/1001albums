@@ -1,69 +1,96 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:albums/models/album.dart';
-// import 'package:scrobblenaut/lastfm.dart' as lastfm;
-// import 'package:scrobblenaut/scrobblenaut.dart';
+import 'package:albums/models/album_details.dart';
+import 'package:albums/models/track.dart';
+import 'package:http/http.dart';
 
 class DetailService {
-  // static LastFM _lastFMAuth;
+  final String apiKey;
+  final Client client;
 
-  static final DetailService _instance = DetailService._internal();
+  const DetailService({required this.client, required this.apiKey});
 
-  factory DetailService() => _instance;
+  Future<AlbumDetails> getDetails(Album album) async {
+    developer.log('retrieving album: ${album.albumTitle}');
 
-  DetailService._internal() {
-    developer.log("create details service");
+    var url = Uri.parse(
+        'https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=$apiKey&artist=${album.artist}&album=${album.albumTitle}&format=json');
+    Response response = await client.get(url);
+    if (response.statusCode == 200) {
+      try {
+        developer.log('response: ${response.body}');
+        var data = jsonDecode(response.body);
+
+        var albumData = data['album'];
+        var info = extractInfo(albumData['wiki']);
+        var cover = extractCover(albumData['image']);
+        List<String> tags = extractTags(albumData['tags']);
+        List<Track> tracks = extractTracks(albumData['tracks']);
+
+        developer.log('album details: $cover, $tags, $tracks');
+        return AlbumDetails(
+          info: info,
+          cover: cover,
+          tags: tags,
+          tracks: tracks,
+        );
+      } catch (e, stackTrace) {
+        developer.log('Failed to parse album details: $e', error: e);
+        throw Error.throwWithStackTrace(
+            Exception('Failed to parse album details: $e'), stackTrace);
+      }
+    } else {
+      throw Exception('Failed to get album details');
+    }
   }
 
-  // static Future<LastFM> init() async {
-  //   developer.log("init details service");
-  //   final secrets = await SecretLoader().load();
-  //   _lastFMAuth = LastFM.noAuth(apiKey: secrets.apiKey);
-  //   return _lastFMAuth;
-  // }
-  //
-  // Future<LastFM> get lastFMAuth async {
-  //   return _lastFMAuth ?? init();
-  // }
+  String? extractInfo(dynamic wikiData) {
+    if (wikiData == null || wikiData.isEmpty || wikiData['content'] == null) {
+      return null;
+    }
 
-  Future<Album> getDetails(Album album) async {
-    developer.log("retrieving album: ${album.albumTitle}");
-
-    // final lastFMAuth = await _instance.lastFMAuth;
-    // final scrobblenaut = Scrobblenaut(lastFM: lastFMAuth);
-
-    // var info = await scrobblenaut.album
-    //     .getInfo(album: album.albumTitle, artist: album.artist);
-
-    album.details = false;
-    // album.cover = image(info.images ?? [])?.text;
-    // album.tags = info.tags?.map((t) => t.name)?.toList();
-    // album.tracks = List<Track>(info.tracks.length);
-    // for (var i = 0; i < info.tracks.length; ++i) {
-    //   final track = info.tracks[i];
-    //   album.tracks[i] = Track(i, track.name, format(track.duration));
-    // }
-
-    developer.log("album details: ${album.fullString()}");
-
-    return album;
+    return wikiData['content'];
   }
 
-  format(Duration d) => d.toString().substring(d.inHours > 0 ? 0 : 2, 7);
+  String? extractCover(dynamic imageData) {
+    if (imageData == null || imageData.isEmpty) {
+      return null;
+    }
 
-/*  static const List<lastfm.Size> sizePriority = [
-    lastfm.Size.large,
-    lastfm.Size.medium,
-    lastfm.Size.extralarge,
-    lastfm.Size.small,
-    lastfm.Size.mega,
-    lastfm.Size.empty,
-    lastfm.Size.None,
-  ];
+    String cover =
+        imageData.length > 2 ? imageData[2]['#text'] : imageData[0]['#text'];
 
-  image(List<lastfm.Image> images) {
-    images.sort((i1, i2) =>
-        sizePriority.indexOf(i1.size).compareTo(sizePriority.indexOf(i2.size)));
-    return images.first;
-  }*/
+    if (!cover.startsWith('http') || !cover.startsWith('https')) {
+      return null;
+    }
+    return cover;
+  }
+
+  List<String> extractTags(dynamic tagsData) {
+    if (tagsData == null || tagsData.isEmpty) {
+      return [];
+    }
+
+    return tagsData?['tag']
+            ?.map<String>((tag) => '${tag['name']}')
+            .where((name) => name != '')
+            .toList() ??
+        [];
+  }
+
+  List<Track> extractTracks(dynamic tracksData) {
+    Iterable<Track?> tracks = tracksData?['track']?.map<Track?>((track) =>
+            track['name'] != null && track['name'] != ''
+                ? Track(
+                    int.tryParse(track['@attr']?['rank']?.toString() ?? '0') ??
+                        0,
+                    track['name'] ?? '',
+                    track['duration'])
+                : null) ??
+        [];
+
+    return tracks.nonNulls.toList();
+  }
 }

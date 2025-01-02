@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AboutPage extends StatelessWidget {
-  static const String routeName = "/about";
+  static const String routeName = '/about';
+
+  const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("About"),
+        title: const Text('About'),
       ),
       body: ListView(children: <Widget>[
         _buildTitle(context, '1001 Albums'),
@@ -46,7 +48,7 @@ class AboutPage extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context, String title) {
     return Container(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Center(
         child: Text(
           title,
@@ -62,7 +64,7 @@ class AboutPage extends StatelessWidget {
 
   Widget _buildVersion(BuildContext context, String version) {
     return Container(
-      padding: EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Center(
         child: Text(version, style: Theme.of(context).textTheme.bodySmall),
       ),
@@ -72,7 +74,7 @@ class AboutPage extends StatelessWidget {
   Widget _buildDescription(
       BuildContext context, TextStyle style, String description) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       child: Text(
         description,
         style: style,
@@ -82,8 +84,8 @@ class AboutPage extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context, String footer) {
     return Container(
-      key: Key('footer'),
-      padding: EdgeInsets.all(16.0),
+      key: const Key('footer'),
+      padding: const EdgeInsets.all(16.0),
       child: Center(
           child: Text(footer, style: Theme.of(context).textTheme.bodySmall)),
     );

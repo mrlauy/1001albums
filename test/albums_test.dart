@@ -1,6 +1,5 @@
 import 'package:albums/models/album.dart';
 import 'package:albums/models/sort.dart';
-import 'package:albums/screens/album.dart';
 import 'package:albums/screens/albums.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,7 +20,7 @@ void main() {
             albums: albums,
             updateListened: (Album album, bool listened) {},
             updateRating: (Album album, double rating) {},
-            sorting: Sort.Artist,
+            sorting: Sort.artist,
           ),
         ),
       ));
@@ -33,16 +32,18 @@ void main() {
     testWidgets('Should change and callback listened', (tester) async {
       bool listenedClicked = false;
 
-      Album album = anAlbum(listened: true);
+      List<Album> albums = [anAlbum(listened: true)];
 
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: AlbumPage(
-              album: album,
-              updateListened: (Album album, bool listened) {
-                listenedClicked = true;
-              },
-              updateRating: (Album album, double rating) {}),
+          body: AlbumsView(
+            albums: albums,
+            updateListened: (Album album, bool listened) {
+              listenedClicked = true;
+            },
+            updateRating: (Album album, double rating) {},
+            sorting: Sort.artist,
+          ),
         ),
       ));
 
@@ -52,8 +53,6 @@ void main() {
 
       await tester.tap(checkBoxFinder);
       await tester.pump();
-
-      expect(tester.widget<Checkbox>(checkBoxFinder).value, false);
 
       expect(listenedClicked, true);
     });

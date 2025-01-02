@@ -16,13 +16,13 @@ class StorageService {
       const ListToCsvConverter(fieldDelimiter: ',', eol: '\n');
 
   Future<String?> get _localPath async {
-    final directory = await getExternalStorageDirectory();
+    var directory = await getExternalStorageDirectory();
     return directory?.path;
   }
 
   Future<File> get _localFile async {
-    final path = await _localPath;
-    return File("$path/1001albums/albums.csv");
+    var path = await _localPath;
+    return File('$path/1001albums/albums.csv');
   }
 
   Future<List<Album>> loadAlbums(bool forceReload) async {
@@ -39,23 +39,23 @@ class StorageService {
 
   Future<List<List<dynamic>>> _loadAlbums(bool forceReload) async {
     try {
-      final file = await _localFile;
+      var file = await _localFile;
       developer.log('local albums from: $file');
       if (forceReload || !await file.exists()) {
-        developer.log("read albums from assets");
-        final data = await rootBundle.loadString('assets/albums.csv');
+        developer.log('read albums from assets');
+        var data = await rootBundle.loadString('assets/albums.csv');
 
-        developer.log("load albums from assets : $data");
+        developer.log('load albums from assets : $data');
         return readConvertor.convert(data);
       }
-      developer.log("read albums from file");
-      final input = file.openRead();
+      developer.log('read albums from file');
+      var input = file.openRead();
       return (await input
           .transform(utf8.decoder)
           .transform(readConvertor)
           .toList());
     } catch (e) {
-      throw ("failed to read albums: $e");
+      throw ('failed to read albums: $e');
     }
   }
 
@@ -64,14 +64,14 @@ class StorageService {
   }
 
   Future _storeAlbums(List<List<dynamic>> albums) async {
-    developer.log("write albums to file");
+    developer.log('write albums to file');
     try {
-      final csv = writeConvertor.convert(albums);
-      final file = await _localFile;
+      var csv = writeConvertor.convert(albums);
+      var file = await _localFile;
       await file.create(recursive: true);
-      await file.writeAsString('$csv');
+      await file.writeAsString(csv);
     } catch (e) {
-      print('failed to write file: $e');
+      developer.log('failed to write file: $e', error: e);
     }
   }
 }
